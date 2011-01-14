@@ -1,0 +1,5 @@
+name: ChatRooms
+
+main: com.bukkit.isabaellchen.chatrooms.ChatRooms
+
+version: 1.0
