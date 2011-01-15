@@ -21,8 +21,11 @@ public class ChatRooms extends JavaPlugin {
     private final ChatRoomsPlayerListener playerListener;
     private final HashMap<Player, Boolean> debugees = new HashMap<Player, Boolean>();
 
-    public ChatRooms(PluginLoader pluginLoader, Server instance, PluginDescriptionFile desc, File plugin, ClassLoader cLoader) {
-        super(pluginLoader, instance, desc, plugin, cLoader);
+    public ChatRooms(PluginLoader pluginLoader, Server instance,
+            PluginDescriptionFile desc, File folder, File plugin,
+            ClassLoader cLoader) {
+        super(pluginLoader, instance, desc, folder, plugin, cLoader);
+
 
         this.playerListener = new ChatRoomsPlayerListener(this, instance);
 

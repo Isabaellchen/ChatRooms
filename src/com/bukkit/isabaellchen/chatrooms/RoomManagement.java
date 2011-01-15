@@ -2,14 +2,11 @@ package com.bukkit.isabaellchen.chatrooms;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -76,18 +73,6 @@ public class RoomManagement {
         connections = new HashMap<String, ArrayList<ChatRoom>>();
         admins = new ArrayList<String>();
 
-        /*
-        config = new PropertiesFile("MCChatrooms.properties");
-        try {
-        config.load();
-        } catch (Exception e) {
-        e.printStackTrace();
-        }
-        if (config.containsKey(STRICT_MODE)) {
-        strict = config.getBoolean(STRICT_MODE);
-        }
-
-         */
         config = new Properties();
 
         if (!new File(PATH_TO_CONFIG).exists()) {
@@ -586,13 +571,21 @@ public class RoomManagement {
         ChatRoom room = rooms.get(roomName);
 
         if (permanent) {
+            if (!room.isPermanent()) {
+                saveRoom(room);
+            }
+
             room.setPermanent(true);
-            saveRoom(room);
             player.sendMessage("Channel " + roomName + " is now permanent.");
+
         } else {
+            if (room.isPermanent()) {
+                deleteRoomFromFile(roomName);
+            }
+            
             room.setPermanent(false);
-            deleteRoomFromFile(roomName);
             player.sendMessage("Channel " + roomName + " is no longer Permanent.");
+
         }
     }
 
@@ -701,9 +694,9 @@ public class RoomManagement {
      * @param player The player who wants to broadcast the message
      * @param message The message to be broadcasted
      */
-    void broadcast(ChatRoom room, Player player, String message, String format) {
+    public void broadcast(ChatRoom room, Player player, String message, String format) {
         for (Player p : room.getUsers()) {
-            p.sendMessage(room.getColor() + "[" + room.getName() + "] " + player.getName() + ": " + message);
+            p.sendMessage(room.getColor() + "[" + room.getName() + "] " + player.getDisplayName() + ": " + message);
         }
     }
 
@@ -712,7 +705,7 @@ public class RoomManagement {
      * @param room The room the message is broadcasted to
      * @param message The message to be broadcasted
      */
-    void broadcastSysMsg(ChatRoom room, String message) {
+    public void broadcastSysMsg(ChatRoom room, String message) {
         for (Player p : room.getUsers()) {
             p.sendMessage(room.getColor() + "[" + room.getName() + "] /" + message);
         }
