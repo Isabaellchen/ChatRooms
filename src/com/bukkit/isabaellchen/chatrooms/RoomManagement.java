@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -14,7 +16,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import org.bukkit.Player;
+import org.bukkit.entity.Player;
 import org.bukkit.Server;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -54,10 +56,12 @@ public class RoomManagement {
      */
     private Boolean strict;
     private ArrayList<String> admins;
+    private String format;
     //private PropertiesFile config
     private static final String PATH_TO_CONFIG = "ChatRooms.properties";
     private static final String STRICT_MODE = "strict_channel_creation";
     private static final String SERVER_ADMIN_LIST = "adminnames";
+    private static final String MESSAGE_FORMAT = "message_format";
     private ExecutorService worker;
     private Server server;
     private Properties config;
@@ -78,6 +82,7 @@ public class RoomManagement {
         if (!new File(PATH_TO_CONFIG).exists()) {
             config.setProperty(STRICT_MODE, Boolean.FALSE.toString());
             config.setProperty(SERVER_ADMIN_LIST, "");
+            config.setProperty(MESSAGE_FORMAT, "%1$s[%2$s] %3$s: %4$s");
             try {
                 config.store(new FileOutputStream(PATH_TO_CONFIG), null);
             } catch (Exception e) {
@@ -95,6 +100,8 @@ public class RoomManagement {
             for (String a : temp) {
                 admins.add(a);
             }
+
+            format = config.getProperty(MESSAGE_FORMAT);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -694,9 +701,10 @@ public class RoomManagement {
      * @param player The player who wants to broadcast the message
      * @param message The message to be broadcasted
      */
-    public void broadcast(ChatRoom room, Player player, String message, String format) {
+    public void broadcast(ChatRoom room, Player player, String message) {
+        String output = String.format(format, room.getColor(), room.getName(), player.getDisplayName(), message);
         for (Player p : room.getUsers()) {
-            p.sendMessage(room.getColor() + "[" + room.getName() + "] " + player.getDisplayName() + ": " + message);
+            p.sendMessage(output);
         }
     }
 
@@ -709,6 +717,15 @@ public class RoomManagement {
         for (Player p : room.getUsers()) {
             p.sendMessage(room.getColor() + "[" + room.getName() + "] /" + message);
         }
+    }
+
+    /**
+     * Returns a room by its name
+     * @param roomName The name of the room you are looking for
+     * @return null if the room does not exist or the room you requested.
+     */
+    public ChatRoom getRoom(String roomName) {
+            return rooms.get(roomName);
     }
 
     /**

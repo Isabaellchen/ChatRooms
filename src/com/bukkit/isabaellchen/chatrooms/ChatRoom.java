@@ -2,7 +2,7 @@ package com.bukkit.isabaellchen.chatrooms;
 
 
 import java.util.ArrayList;
-import org.bukkit.Player;
+import org.bukkit.entity.Player;
 
 /**
  *
