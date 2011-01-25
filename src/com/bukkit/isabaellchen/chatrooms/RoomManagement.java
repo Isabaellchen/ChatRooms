@@ -715,7 +715,7 @@ public class RoomManagement {
      */
     public void broadcastSysMsg(ChatRoom room, String message) {
         for (Player p : room.getUsers()) {
-            p.sendMessage(room.getColor() + "[" + room.getName() + "] /" + message);
+            p.sendMessage(room.getColor() + "[" + room.getName() + "] " + message);
         }
     }
 

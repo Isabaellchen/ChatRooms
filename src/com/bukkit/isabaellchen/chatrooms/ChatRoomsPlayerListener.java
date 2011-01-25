@@ -4,9 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import net.minecraft.server.Packet;
+import net.minecraft.server.Packet3Chat;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.Server;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.event.Event.Type;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.event.player.PlayerListener;
@@ -351,10 +355,40 @@ public class ChatRoomsPlayerListener extends PlayerListener {
             }
         }
 
-        if (split.length > 2) {
+        if (split.length >= 2) {
 
             if (split[0].equals("/cmsg")) {
                 final String roomName = split[1];
+
+                if (roomName.equals("general") || roomName.equals("g")) {
+
+                    if (generalFocus.contains(player)) {
+
+                        String message = "";
+                        for (int i = 2; i < split.length; i++) {
+                            message += split[i] + " ";
+                        }
+                        fakeChatMessage(player, message);
+                        return;
+
+                    } else {
+
+                        String currentRoom = focusMap.get(player.getName()).getName();
+                        focusMap.remove(player.getName());
+                        generalFocus.add(player);
+
+                        String message = "";
+                        for (int i = 2; i < split.length; i++) {
+                            message += split[i] + " ";
+                        }
+                        fakeChatMessage(player, message);
+
+                        generalFocus.remove(player);
+                        focusMap.put(player.getName(), man.getRoom(currentRoom));
+
+                        return;
+                    }
+                }
                 if (man.roomExists(roomName) && man.isConnected(player, roomName)) {
 
                     Runnable runnable = new Runnable() {
@@ -362,7 +396,7 @@ public class ChatRoomsPlayerListener extends PlayerListener {
                         public void run() {
                             ChatRoom room = man.getRoom(roomName);
                             String message = "";
-                            for (int i = 2; i < split.length; i++) {
+                            for (int i = 1; i < split.length; i++) {
                                 message += split[i] + " ";
                             }
                             man.broadcast(room, player, message);
@@ -372,6 +406,26 @@ public class ChatRoomsPlayerListener extends PlayerListener {
 
                 } else {
                     player.sendMessage("You need to be member of " + split[1] + "!");
+                }
+            }
+
+            if (split[0].equals("/me")) {
+
+                if (focusMap.containsKey(player.getName())) {
+                    final String roomName = focusMap.get(player.getName()).getName();
+
+                    Runnable runnable = new Runnable() {
+
+                        public void run() {
+                            ChatRoom room = man.getRoom(roomName);
+                            String message = player.getDisplayName() + " ";
+                            for (int i = 2; i < split.length; i++) {
+                                message += split[i] + " ";
+                            }
+                            man.broadcastSysMsg(room, message);
+                        }
+                    };
+                    worker.execute(runnable);
                 }
             }
 
@@ -408,6 +462,58 @@ public class ChatRoomsPlayerListener extends PlayerListener {
                     }
                 }
             }
+
+            if (split[0].substring(0, 3).equals("/c-")) {
+                final String roomName = split[0].substring(3, split[0].length());
+
+                if (roomName.equals("general") || roomName.equals("g")) {
+
+                    if (generalFocus.contains(player)) {
+
+                        String message = "";
+                        for (int i = 1; i < split.length; i++) {
+                            message += split[i] + " ";
+                        }
+                        fakeChatMessage(player, message);
+                        return;
+
+                    } else {
+
+                        String currentRoom = focusMap.get(player.getName()).getName();
+                        focusMap.remove(player.getName());
+                        generalFocus.add(player);
+
+                        String message = "";
+                        for (int i = 1; i < split.length; i++) {
+                            message += split[i] + " ";
+                        }
+                        fakeChatMessage(player, message);
+
+                        generalFocus.remove(player);
+                        focusMap.put(player.getName(), man.getRoom(currentRoom));
+
+                        return;
+                    }
+                }
+                if (man.roomExists(roomName) && man.isConnected(player, roomName)) {
+
+                    Runnable runnable = new Runnable() {
+
+                        public void run() {
+                            ChatRoom room = man.getRoom(roomName);
+                            String message = "";
+                            for (int i = 1; i < split.length; i++) {
+                                message += split[i] + " ";
+                            }
+                            man.broadcast(room, player, message);
+                        }
+                    };
+                    worker.execute(runnable);
+
+                } else {
+                    player.sendMessage("You need to be member of " + split[1] + "!");
+                }
+            }
         }
 
         if (split.length == 4) {
@@ -421,5 +527,14 @@ public class ChatRoomsPlayerListener extends PlayerListener {
 
             }
         }
+    }
+
+    public void fakeChatMessage(Player player, String message) {
+
+        PlayerChatEvent event = new PlayerChatEvent(Type.PLAYER_CHAT, player, message);
+        message = String.format(event.getFormat(), event.getPlayer().getDisplayName(), event.getMessage());
+
+        CraftPlayer cp = (CraftPlayer) player;
+        cp.getHandle().b.f.a((Packet) new Packet3Chat(message));
     }
 }
